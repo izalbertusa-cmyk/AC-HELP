@@ -48,7 +48,6 @@ export default function PreviewScreen({
   fotosCheias,
   enviado,
   onToggleFormato,
-  onToggleFotosCheias,
   onSalvar,
   onEnviado,
 }: PreviewScreenProps) {
@@ -91,12 +90,10 @@ export default function PreviewScreen({
     try {
       onSalvar();
       const principal = await gerarArquivoPrincipal();
+      // WhatsApp no Android descarta o compartilhamento (ou recusa com "mensagem vazia")
+      // quando recebe mais de um arquivo/tipo junto — por isso enviamos só o documento
+      // principal; as fotos já vêm embutidas nele em miniatura.
       const arquivos = [{ blob: principal.blob, nome: principal.nome }];
-      if (fotosCheias) {
-        fotos.forEach((f, i) => {
-          arquivos.push({ blob: dataUrlParaBlob(f.dataUrl), nome: `foto-${i + 1}.jpg` });
-        });
-      }
       const arquivosFile = arquivos.map((a) => new File([a.blob], a.nome, { type: a.blob.type }));
       if (!suportaCompartilharArquivos(arquivosFile)) {
         setSemSuporte(true);
@@ -117,9 +114,7 @@ export default function PreviewScreen({
     }
   }
 
-  const resumo = fotosCheias
-    ? `${formato} + ${fotos.length} fotos em tamanho cheio para ${fone || 'o cliente'}`
-    : `Só o ${formato} (fotos em miniatura) para ${fone || 'o cliente'}`;
+  const resumo = `${formato} (com fotos em miniatura) para ${fone || 'o cliente'}`;
 
   return (
     <div className="tela">
@@ -198,22 +193,6 @@ export default function PreviewScreen({
             check_circle
           </span>
         </div>
-        <button type="button" className="preview-opcao" onClick={onToggleFotosCheias} style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer' }}>
-          <span className="material-symbols-rounded preview-opcao__icone">photo_library</span>
-          <div style={{ flex: 1, textAlign: 'left' }}>
-            <div className="preview-opcao__titulo">Fotos em tamanho cheio</div>
-            <div className="preview-opcao__sub">Depois do {formato}, para o cliente ampliar</div>
-          </div>
-          <div
-            className="toggle"
-            style={{
-              background: fotosCheias ? 'var(--verde)' : '#ccd4dd',
-              justifyContent: fotosCheias ? 'flex-end' : 'flex-start',
-            }}
-          >
-            <div className="toggle__knob" />
-          </div>
-        </button>
       </div>
 
       <button type="button" className="btn-enviar" onClick={enviarWhatsapp} disabled={enviando}>
@@ -250,7 +229,7 @@ export default function PreviewScreen({
         <div className="aviso-enviado">
           <span className="material-symbols-rounded aviso-enviado__icone">touch_app</span>
           <div className="aviso-enviado__texto">
-            O menu de compartilhamento abriu com {fotosCheias ? fotos.length + 1 : 1} anexo{(fotosCheias ? fotos.length + 1 : 1) > 1 ? 's' : ''} pronto{(fotosCheias ? fotos.length + 1 : 1) > 1 ? 's' : ''}.{' '}
+            O menu de compartilhamento abriu com o {formato.toLowerCase()} pronto.{' '}
             <strong>Escolha o WhatsApp e o contato de {fone || 'o cliente'}</strong> — o anexo já vem no envio, escreva uma mensagem se quiser antes de enviar.
           </div>
         </div>
