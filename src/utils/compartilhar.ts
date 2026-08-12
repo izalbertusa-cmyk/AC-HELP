@@ -17,9 +17,7 @@ export function suportaCompartilharArquivos(arquivos: File[]): boolean {
 }
 
 export async function compartilharArquivos(
-  arquivos: ArquivoCompartilhavel[],
-  texto: string,
-  titulo: string
+  arquivos: ArquivoCompartilhavel[]
 ): Promise<'ok' | 'sem-suporte' | 'erro'> {
   const files = arquivos.map(
     (a) => new File([a.blob], a.nome, { type: a.blob.type })
@@ -32,7 +30,9 @@ export async function compartilharArquivos(
     return 'sem-suporte';
   }
   try {
-    await nav.share({ files, text: texto, title: titulo });
+    // Alguns apps (WhatsApp no Android) descartam o arquivo quando "text"/"title"
+    // vêm junto — enviar só os arquivos força o Android a tratar como anexo puro.
+    await nav.share({ files });
     return 'ok';
   } catch {
     return 'erro';

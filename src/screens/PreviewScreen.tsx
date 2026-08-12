@@ -104,11 +104,7 @@ export default function PreviewScreen({
         baixarArquivo(principal.blob, principal.nome);
         return;
       }
-      const resultado = await compartilharArquivos(
-        arquivos,
-        `Orçamento ${numero} — total ${formatarBRL(totalNum)}`,
-        `Orçamento ${numero} — ${oficina.nome}`
-      );
+      const resultado = await compartilharArquivos(arquivos);
       if (resultado === 'ok') {
         onEnviado();
       } else if (resultado === 'sem-suporte') {
@@ -255,7 +251,7 @@ export default function PreviewScreen({
           <span className="material-symbols-rounded aviso-enviado__icone">touch_app</span>
           <div className="aviso-enviado__texto">
             O menu de compartilhamento abriu com {fotosCheias ? fotos.length + 1 : 1} anexo{(fotosCheias ? fotos.length + 1 : 1) > 1 ? 's' : ''} pronto{(fotosCheias ? fotos.length + 1 : 1) > 1 ? 's' : ''}.{' '}
-            <strong>Escolha o WhatsApp e o contato de {fone || 'o cliente'}</strong> para concluir o envio.
+            <strong>Escolha o WhatsApp e o contato de {fone || 'o cliente'}</strong> — o anexo já vem no envio, escreva uma mensagem se quiser antes de enviar.
           </div>
         </div>
       )}
