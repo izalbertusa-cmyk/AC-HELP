@@ -1,0 +1,87 @@
+:root {
+  --azul: #1b3f69;
+  --laranja: #f58634;
+  --laranja-hover: #dd7126;
+  --laranja-claro: #ffb071;
+  --fundo-tela: #eef1f5;
+  --fundo-campo: #f7f9fb;
+  --branco: #ffffff;
+  --borda: #dde3ea;
+  --borda-tracejada: #c2ccd8;
+  --divisor: #edf1f5;
+  --cinza-neutro: #e2e8ef;
+  --texto-secundario: #7b8794;
+  --texto-terciario: #9aa5b1;
+  --texto-sobre-azul: #33404f;
+  --verde: #1faa54;
+  --verde-hover: #188f45;
+  --verde-fundo: #eaf7ee;
+  --verde-borda: #bfe3cb;
+  --verde-texto: #17603a;
+  --alerta-fundo: #fff7ed;
+  --alerta-borda: #f9c795;
+  --alerta-titulo: #9a3412;
+  --alerta-corpo: #a16207;
+  --alerta-icone: #c2410c;
+  --destrutivo-hover-fundo: #ffe0cc;
+  --destrutivo-hover-texto: #c2410c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #0e1a2b;
+}
+
+body {
+  font-family: Barlow, system-ui, sans-serif;
+  color: var(--texto-sobre-azul);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: #0e1a2b;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+input {
+  -webkit-appearance: none;
+}
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon-fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+}
