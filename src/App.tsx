@@ -18,6 +18,7 @@ import type {
   Veiculo,
 } from './types';
 import { parseValor } from './utils/money';
+import { baixarContatoVcf } from './utils/contato';
 
 const VEICULO_VAZIO: Veiculo = { modelo: '', ano: '', motor: '', gas: 'R134a' };
 
@@ -263,7 +264,10 @@ export default function App() {
             onFoneChange={setFone}
             onToggleQueixa={toggleQueixa}
             onSalvarNovoTopico={salvarNovoTopico}
-            onContinuar={() => irPara('orcamento')}
+            onContinuar={() => {
+              baixarContatoVcf(cliente, fone);
+              irPara('orcamento');
+            }}
           />
         )}
         {tela === 'orcamento' && (
