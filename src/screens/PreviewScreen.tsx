@@ -3,7 +3,8 @@ import type { FotoOrcamento, ItemOrcamento, OficinaDados, Veiculo } from '../typ
 import { formatarBRL } from '../utils/money';
 import { gerarPdfOrcamento } from '../utils/pdf';
 import { gerarPngDoDocumento, dataUrlParaBlob } from '../utils/documento';
-import { montarLinkWhatsapp, baixarArquivo } from '../utils/whatsapp';
+import { baixarArquivo } from '../utils/whatsapp';
+import { suportaCompartilharArquivos, compartilharArquivos } from '../utils/compartilhar';
 
 interface PreviewScreenProps {
   oficina: OficinaDados;
@@ -53,6 +54,7 @@ export default function PreviewScreen({
 }: PreviewScreenProps) {
   const docRef = useRef<HTMLDivElement>(null);
   const [enviando, setEnviando] = useState(false);
+  const [semSuporte, setSemSuporte] = useState(false);
   const [arquivoBaixavel, setArquivoBaixavel] = useState<{ url: string; nome: string } | null>(null);
   const dataHora = useMemo(() => dataHoraAgora(), []);
 
@@ -85,22 +87,35 @@ export default function PreviewScreen({
 
   async function enviarWhatsapp() {
     setEnviando(true);
+    setSemSuporte(false);
     try {
       onSalvar();
       const principal = await gerarArquivoPrincipal();
-      baixarArquivo(principal.blob, principal.nome);
+      const arquivos = [{ blob: principal.blob, nome: principal.nome }];
       if (fotosCheias) {
         fotos.forEach((f, i) => {
-          baixarArquivo(dataUrlParaBlob(f.dataUrl), `foto-${i + 1}.jpg`);
+          arquivos.push({ blob: dataUrlParaBlob(f.dataUrl), nome: `foto-${i + 1}.jpg` });
         });
       }
-      setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
-      const artigo = formato === 'PDF' ? 'o' : 'a';
-      const texto = `Olá${cliente ? ' ' + cliente : ''}! Segue o orçamento nº ${numero} da ${oficina.nome} — total ${formatarBRL(
-        totalNum
-      )}. Já te envio ${artigo} ${formato.toLowerCase()} na próxima mensagem.`;
-      window.open(montarLinkWhatsapp(fone, texto), '_blank');
-      onEnviado();
+      const arquivosFile = arquivos.map((a) => new File([a.blob], a.nome, { type: a.blob.type }));
+      if (!suportaCompartilharArquivos(arquivosFile)) {
+        setSemSuporte(true);
+        setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
+        baixarArquivo(principal.blob, principal.nome);
+        return;
+      }
+      const resultado = await compartilharArquivos(
+        arquivos,
+        `Orçamento ${numero} — total ${formatarBRL(totalNum)}`,
+        `Orçamento ${numero} — ${oficina.nome}`
+      );
+      if (resultado === 'ok') {
+        onEnviado();
+      } else if (resultado === 'sem-suporte') {
+        setSemSuporte(true);
+        setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
+        baixarArquivo(principal.blob, principal.nome);
+      }
     } finally {
       setEnviando(false);
     }
@@ -209,36 +224,38 @@ export default function PreviewScreen({
         <span className="material-symbols-rounded" style={{ fontSize: 21 }}>
           {enviado ? 'check_circle' : 'send'}
         </span>
-        {enviando ? 'Preparando…' : enviado ? 'Conversa aberta' : 'Abrir conversa no WhatsApp'}
+        {enviando ? 'Preparando…' : enviado ? 'Aberto no WhatsApp' : 'Enviar no WhatsApp'}
       </button>
 
       <div className="resumo-envio">{resumo}</div>
+
+      {semSuporte && (
+        <div className="aviso-alerta" style={{ marginTop: 12 }}>
+          <span className="material-symbols-rounded aviso-alerta__icone">wifi_off</span>
+          <div>
+            <div className="aviso-alerta__titulo">Compartilhamento não suportado</div>
+            <div className="aviso-alerta__corpo">
+              Este navegador não permite anexar arquivo direto no compartilhamento — o {formato.toLowerCase()} já foi baixado.
+              {arquivoBaixavel && (
+                <>
+                  {' '}
+                  <a href={arquivoBaixavel.url} download={arquivoBaixavel.nome} style={{ color: 'var(--alerta-icone)', fontWeight: 700 }}>
+                    Baixar de novo
+                  </a>
+                </>
+              )}{' '}
+              e anexe manualmente na conversa com {fone || 'o cliente'}.
+            </div>
+          </div>
+        </div>
+      )}
 
       {enviado && (
         <div className="aviso-enviado">
           <span className="material-symbols-rounded aviso-enviado__icone">touch_app</span>
           <div className="aviso-enviado__texto">
-            <div style={{ marginBottom: 6 }}>
-              O texto já foi enviado — o WhatsApp <strong>não deixa anexar arquivo automaticamente</strong>, falta só isso:
-            </div>
-            <div style={{ marginBottom: 3 }}>
-              1. Volte pra conversa que abriu com {fone ? fone : 'o cliente'}
-            </div>
-            <div style={{ marginBottom: 3 }}>
-              2. Toque no clipe (📎) → Documento (ou Galeria)
-            </div>
-            <div style={{ marginBottom: 3 }}>
-              3. Escolha o{fotosCheias && fotos.length > 0 ? 's' : ''} arquivo{fotosCheias && fotos.length > 0 ? 's' : ''} que acabou de baixar
-              {fotosCheias && fotos.length > 0 ? ` (${formato.toLowerCase()} + ${fotos.length} foto${fotos.length > 1 ? 's' : ''})` : ` (${formato.toLowerCase()})`} e envie
-            </div>
-            {arquivoBaixavel && (
-              <div style={{ marginTop: 6 }}>
-                Não achou o arquivo?{' '}
-                <a href={arquivoBaixavel.url} download={arquivoBaixavel.nome} style={{ color: 'inherit', fontWeight: 700 }}>
-                  baixar {formato.toLowerCase()} de novo
-                </a>
-              </div>
-            )}
+            O menu de compartilhamento abriu com {fotosCheias ? fotos.length + 1 : 1} anexo{(fotosCheias ? fotos.length + 1 : 1) > 1 ? 's' : ''} pronto{(fotosCheias ? fotos.length + 1 : 1) > 1 ? 's' : ''}.{' '}
+            <strong>Escolha o WhatsApp e o contato de {fone || 'o cliente'}</strong> para concluir o envio.
           </div>
         </div>
       )}
