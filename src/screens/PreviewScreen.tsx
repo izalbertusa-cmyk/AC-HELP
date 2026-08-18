@@ -3,8 +3,8 @@ import type { FotoOrcamento, ItemOrcamento, OficinaDados, Veiculo } from '../typ
 import { formatarBRL } from '../utils/money';
 import { gerarPdfOrcamento } from '../utils/pdf';
 import { gerarPngDoDocumento, dataUrlParaBlob } from '../utils/documento';
-import { baixarArquivo } from '../utils/whatsapp';
-import { suportaCompartilharArquivos, compartilharArquivos } from '../utils/compartilhar';
+import { baixarArquivo, montarLinkWhatsapp } from '../utils/whatsapp';
+import { enviarParaR2 } from '../utils/upload';
 
 interface PreviewScreenProps {
   oficina: OficinaDados;
@@ -90,25 +90,25 @@ export default function PreviewScreen({
     try {
       onSalvar();
       const principal = await gerarArquivoPrincipal();
-      // WhatsApp no Android descarta o compartilhamento (ou recusa com "mensagem vazia")
-      // quando recebe mais de um arquivo/tipo junto — por isso enviamos só o documento
-      // principal; as fotos já vêm embutidas nele em miniatura.
-      const arquivos = [{ blob: principal.blob, nome: principal.nome }];
-      const arquivosFile = arquivos.map((a) => new File([a.blob], a.nome, { type: a.blob.type }));
-      if (!suportaCompartilharArquivos(arquivosFile)) {
-        setSemSuporte(true);
-        setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
-        baixarArquivo(principal.blob, principal.nome);
-        return;
-      }
-      const resultado = await compartilharArquivos(arquivos);
-      if (resultado === 'ok') {
-        onEnviado();
-      } else if (resultado === 'sem-suporte') {
-        setSemSuporte(true);
-        setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
-        baixarArquivo(principal.blob, principal.nome);
-      }
+      const linkPublico = await enviarParaR2(principal.blob);
+      const artigo = formato === 'PDF' ? 'o' : 'a';
+      const texto = `Olá${cliente ? ' ' + cliente : ''}! Segue ${artigo} ${formato.toLowerCase()} do orçamento nº ${numero} da ${oficina.nome} — total ${formatarBRL(
+        totalNum
+      )}:\n${linkPublico}`;
+      window.open(montarLinkWhatsapp(fone, texto), '_blank');
+      onEnviado();
+    } catch {
+      // sem internet, ou upload falhou: cai para o fluxo local (baixa o arquivo,
+      // mecânico anexa manualmente na conversa)
+      const principal = await gerarArquivoPrincipal();
+      setSemSuporte(true);
+      setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
+      baixarArquivo(principal.blob, principal.nome);
+      const artigo = formato === 'PDF' ? 'o' : 'a';
+      const texto = `Olá${cliente ? ' ' + cliente : ''}! Segue ${artigo} ${formato.toLowerCase()} do orçamento nº ${numero} da ${oficina.nome} — total ${formatarBRL(
+        totalNum
+      )}. Já te envio na próxima mensagem.`;
+      window.open(montarLinkWhatsapp(fone, texto), '_blank');
     } finally {
       setEnviando(false);
     }
@@ -208,9 +208,9 @@ export default function PreviewScreen({
         <div className="aviso-alerta" style={{ marginTop: 12 }}>
           <span className="material-symbols-rounded aviso-alerta__icone">wifi_off</span>
           <div>
-            <div className="aviso-alerta__titulo">Compartilhamento não suportado</div>
+            <div className="aviso-alerta__titulo">Sem conexão com o servidor</div>
             <div className="aviso-alerta__corpo">
-              Este navegador não permite anexar arquivo direto no compartilhamento — o {formato.toLowerCase()} já foi baixado.
+              Não deu pra gerar o link do orçamento agora (sem internet?) — o {formato.toLowerCase()} já foi baixado.
               {arquivoBaixavel && (
                 <>
                   {' '}
@@ -219,18 +219,18 @@ export default function PreviewScreen({
                   </a>
                 </>
               )}{' '}
-              e anexe manualmente na conversa com {fone || 'o cliente'}.
+              A conversa com {fone || 'o cliente'} abriu — anexe manualmente o arquivo baixado.
             </div>
           </div>
         </div>
       )}
 
-      {enviado && (
+      {enviado && !semSuporte && (
         <div className="aviso-enviado">
           <span className="material-symbols-rounded aviso-enviado__icone">touch_app</span>
           <div className="aviso-enviado__texto">
-            O menu de compartilhamento abriu com o {formato.toLowerCase()} pronto.{' '}
-            <strong>Escolha o WhatsApp e o contato de {fone || 'o cliente'}</strong> — o anexo já vem no envio, escreva uma mensagem se quiser antes de enviar.
+            A conversa com {fone || 'o cliente'} abriu com o link do {formato.toLowerCase()} já na mensagem.{' '}
+            <strong>Toque em enviar</strong> para concluir.
           </div>
         </div>
       )}
