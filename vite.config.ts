@@ -8,6 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['pwa-icon.png'],
+      workbox: {
+        navigateFallbackDenylist: [/^\/o\//, /^\/api\//],
+      },
       manifest: {
         name: 'A/C HELP',
         short_name: 'A/C HELP',
