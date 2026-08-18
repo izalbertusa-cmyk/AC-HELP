@@ -5,6 +5,7 @@ import { gerarPdfOrcamento } from '../utils/pdf';
 import { gerarPngDoDocumento, dataUrlParaBlob } from '../utils/documento';
 import { baixarArquivo, montarLinkWhatsapp } from '../utils/whatsapp';
 import { enviarParaR2 } from '../utils/upload';
+import { suportaCompartilharArquivos, compartilharArquivos } from '../utils/compartilhar';
 
 interface PreviewScreenProps {
   oficina: OficinaDados;
@@ -54,6 +55,7 @@ export default function PreviewScreen({
   const docRef = useRef<HTMLDivElement>(null);
   const [enviando, setEnviando] = useState(false);
   const [semSuporte, setSemSuporte] = useState(false);
+  const [metodoEnvio, setMetodoEnvio] = useState<'anexo' | 'link' | null>(null);
   const [arquivoBaixavel, setArquivoBaixavel] = useState<{ url: string; nome: string } | null>(null);
   const dataHora = useMemo(() => dataHoraAgora(), []);
 
@@ -84,23 +86,18 @@ export default function PreviewScreen({
     return { blob: dataUrlParaBlob(dataUrl), nome: `orcamento-${numero}.png`, mime: 'image/png' };
   }
 
-  async function enviarWhatsapp() {
-    setEnviando(true);
-    setSemSuporte(false);
+  async function enviarPorLink(principal: { blob: Blob; nome: string }) {
     try {
-      onSalvar();
-      const principal = await gerarArquivoPrincipal();
       const linkPublico = await enviarParaR2(principal.blob);
       const artigo = formato === 'PDF' ? 'o' : 'a';
       const texto = `Olá${cliente ? ' ' + cliente : ''}! Segue ${artigo} ${formato.toLowerCase()} do orçamento nº ${numero} da ${oficina.nome} — total ${formatarBRL(
         totalNum
       )}:\n${linkPublico}`;
       window.open(montarLinkWhatsapp(fone, texto), '_blank');
+      setMetodoEnvio('link');
       onEnviado();
     } catch {
-      // sem internet, ou upload falhou: cai para o fluxo local (baixa o arquivo,
-      // mecânico anexa manualmente na conversa)
-      const principal = await gerarArquivoPrincipal();
+      // sem internet, ou upload falhou: baixa local, mecânico anexa manualmente
       setSemSuporte(true);
       setArquivoBaixavel({ url: URL.createObjectURL(principal.blob), nome: principal.nome });
       baixarArquivo(principal.blob, principal.nome);
@@ -109,6 +106,31 @@ export default function PreviewScreen({
         totalNum
       )}. Já te envio na próxima mensagem.`;
       window.open(montarLinkWhatsapp(fone, texto), '_blank');
+    }
+  }
+
+  async function enviarWhatsapp() {
+    setEnviando(true);
+    setSemSuporte(false);
+    try {
+      onSalvar();
+      const principal = await gerarArquivoPrincipal();
+      // Prioriza anexar o PDF/imagem de verdade (fica com cara de documento real
+      // no WhatsApp, igual concorrência) — só cai pro link se o navegador não
+      // suportar compartilhar arquivo.
+      const arquivoFile = new File([principal.blob], principal.nome, { type: principal.blob.type });
+      if (!suportaCompartilharArquivos([arquivoFile])) {
+        await enviarPorLink(principal);
+        return;
+      }
+      const resultado = await compartilharArquivos([{ blob: principal.blob, nome: principal.nome }]);
+      if (resultado === 'ok') {
+        setMetodoEnvio('anexo');
+        onEnviado();
+      } else if (resultado === 'sem-suporte') {
+        await enviarPorLink(principal);
+      }
+      // 'erro' geralmente é o mecânico cancelando o menu de compartilhar — não faz nada.
     } finally {
       setEnviando(false);
     }
@@ -225,7 +247,17 @@ export default function PreviewScreen({
         </div>
       )}
 
-      {enviado && !semSuporte && (
+      {enviado && !semSuporte && metodoEnvio === 'anexo' && (
+        <div className="aviso-enviado">
+          <span className="material-symbols-rounded aviso-enviado__icone">touch_app</span>
+          <div className="aviso-enviado__texto">
+            O menu de compartilhamento abriu com o {formato.toLowerCase()} pronto.{' '}
+            <strong>Escolha o WhatsApp e o contato de {fone || 'o cliente'}</strong> para concluir o envio.
+          </div>
+        </div>
+      )}
+
+      {enviado && !semSuporte && metodoEnvio === 'link' && (
         <div className="aviso-enviado">
           <span className="material-symbols-rounded aviso-enviado__icone">touch_app</span>
           <div className="aviso-enviado__texto">
