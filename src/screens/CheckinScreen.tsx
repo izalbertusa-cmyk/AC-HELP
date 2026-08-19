@@ -9,7 +9,6 @@ interface CheckinScreenProps {
   manual: boolean;
   cliente: string;
   fone: string;
-  clienteNovo: boolean;
   queixas: string[];
   queixasSel: string[];
   onPlacaChange: (v: string) => void;
@@ -42,7 +41,6 @@ export default function CheckinScreen({
   manual,
   cliente,
   fone,
-  clienteNovo,
   queixas,
   queixasSel,
   onPlacaChange,
@@ -279,7 +277,7 @@ export default function CheckinScreen({
           className="field"
           style={{ marginTop: 9 }}
         />
-        {clienteNovo && cliente.trim() && (
+        {cliente.trim() && fone.trim() && (
           <button
             type="button"
             onClick={() => {
@@ -307,7 +305,7 @@ export default function CheckinScreen({
             </span>
             {contatoSalvo
               ? 'Toque em "Abrir" na notificação de download para confirmar o contato'
-              : 'Cliente novo — toque para salvar contato no WhatsApp'}
+              : 'Salvar contato do cliente no WhatsApp'}
           </button>
         )}
       </div>

@@ -18,7 +18,7 @@ import type {
   Veiculo,
 } from './types';
 import { parseValor } from './utils/money';
-import { baixarContatoVcf, digitosTelefone } from './utils/contato';
+import { baixarContatoVcf } from './utils/contato';
 
 const VEICULO_VAZIO: Veiculo = { modelo: '', ano: '', motor: '', gas: 'R134a' };
 
@@ -86,13 +86,6 @@ export default function App() {
   );
 
   const queixas = useMemo(() => (topicosDb ?? []).map((t) => t.nome), [topicosDb]);
-
-  const fonesConhecidos = useMemo(
-    () => new Set((orcamentosDb ?? []).map((o) => digitosTelefone(o.fone))),
-    [orcamentosDb]
-  );
-  const foneDigitos = digitosTelefone(fone);
-  const clienteNovo = foneDigitos.length >= 10 && !fonesConhecidos.has(foneDigitos);
 
   const totalNum = useMemo(
     () => itens.reduce((acc, it) => acc + parseValor(it.valor), 0),
@@ -259,7 +252,6 @@ export default function App() {
             manual={manual}
             cliente={cliente}
             fone={fone}
-            clienteNovo={clienteNovo}
             queixas={queixas}
             queixasSel={queixasSel}
             onPlacaChange={onPlacaChange}
