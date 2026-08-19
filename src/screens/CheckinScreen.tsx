@@ -306,7 +306,7 @@ export default function CheckinScreen({
               {contatoSalvo ? 'check_circle' : 'person_add'}
             </span>
             {contatoSalvo
-              ? 'Contato salvo — confirme na tela que abriu, se ainda não fez'
+              ? 'Toque em "Abrir" na notificação de download para confirmar o contato'
               : 'Cliente novo — toque para salvar contato no WhatsApp'}
           </button>
         )}
