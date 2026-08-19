@@ -18,13 +18,12 @@ export function baixarContatoVcf(nome: string, fone: string): void {
     `TEL;TYPE=CELL:${telefone}`,
     'END:VCARD',
   ].join('\r\n');
-  const blob = new Blob([vcard], { type: 'text/vcard' });
+  const blob = new Blob([vcard], { type: 'text/x-vcard' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${nome.trim()}.vcf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  // Sem o atributo "download": abrir o blob numa aba nova faz o Android reconhecer
+  // o tipo text/x-vcard e oferecer abrir com o app de Contatos, em vez de só
+  // salvar o arquivo silenciosamente na pasta Downloads. window.open (em vez de
+  // location.href) evita destruir o estado do app na aba atual.
+  window.open(url, '_blank');
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
