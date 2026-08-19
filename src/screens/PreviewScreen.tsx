@@ -224,6 +224,36 @@ export default function PreviewScreen({
         {enviando ? 'Preparando…' : enviado ? 'Aberto no WhatsApp' : 'Enviar no WhatsApp'}
       </button>
 
+      <button
+        type="button"
+        onClick={async () => {
+          setEnviando(true);
+          setSemSuporte(false);
+          setMetodoEnvio('link');
+          try {
+            onSalvar();
+            const principal = await gerarArquivoPrincipal();
+            await enviarPorLink(principal);
+          } finally {
+            setEnviando(false);
+          }
+        }}
+        disabled={enviando}
+        style={{
+          marginTop: 8,
+          width: '100%',
+          padding: '10px',
+          border: 'none',
+          background: 'none',
+          color: 'var(--laranja)',
+          font: '700 12.5px/1 Barlow',
+          textAlign: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        Cliente novo, ainda não salvo? Enviar por link
+      </button>
+
       <div className="resumo-envio">{resumo}</div>
 
       {semSuporte && (
