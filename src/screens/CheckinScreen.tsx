@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FonteVeiculo, Veiculo } from '../types';
 
 interface CheckinScreenProps {
@@ -9,6 +9,7 @@ interface CheckinScreenProps {
   manual: boolean;
   cliente: string;
   fone: string;
+  clienteNovo: boolean;
   queixas: string[];
   queixasSel: string[];
   onPlacaChange: (v: string) => void;
@@ -19,6 +20,7 @@ interface CheckinScreenProps {
   onSalvarVeiculo: () => void;
   onClienteChange: (v: string) => void;
   onFoneChange: (v: string) => void;
+  onSalvarContato: () => void;
   onToggleQueixa: (nome: string) => void;
   onSalvarNovoTopico: (nome: string) => void;
   onContinuar: () => void;
@@ -40,6 +42,7 @@ export default function CheckinScreen({
   manual,
   cliente,
   fone,
+  clienteNovo,
   queixas,
   queixasSel,
   onPlacaChange,
@@ -50,12 +53,18 @@ export default function CheckinScreen({
   onSalvarVeiculo,
   onClienteChange,
   onFoneChange,
+  onSalvarContato,
   onToggleQueixa,
   onSalvarNovoTopico,
   onContinuar,
 }: CheckinScreenProps) {
   const [novoTopicoAberto, setNovoTopicoAberto] = useState(false);
   const [novoTopico, setNovoTopico] = useState('');
+  const [contatoSalvo, setContatoSalvo] = useState(false);
+
+  useEffect(() => {
+    setContatoSalvo(false);
+  }, [fone]);
 
   const falhouBusca = fonte === 'falha' || (manual && fonte !== 'api' && fonte !== 'local');
   const tituloFalha = fonte === 'falha' ? 'Placa não encontrada ou sem internet' : 'Preenchimento manual';
@@ -270,6 +279,37 @@ export default function CheckinScreen({
           className="field"
           style={{ marginTop: 9 }}
         />
+        {clienteNovo && cliente.trim() && (
+          <button
+            type="button"
+            onClick={() => {
+              onSalvarContato();
+              setContatoSalvo(true);
+            }}
+            style={{
+              width: '100%',
+              marginTop: 10,
+              padding: '11px',
+              borderRadius: 10,
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              font: '700 13px/1 Barlow',
+              background: contatoSalvo ? '#eaf7ee' : '#fff3e8',
+              color: contatoSalvo ? '#17603a' : '#b8571a',
+            }}
+          >
+            <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
+              {contatoSalvo ? 'check_circle' : 'person_add'}
+            </span>
+            {contatoSalvo
+              ? 'Contato salvo — confirme na tela que abriu, se ainda não fez'
+              : 'Cliente novo — toque para salvar contato no WhatsApp'}
+          </button>
+        )}
       </div>
 
       <div className="card" style={{ marginTop: 16, marginBottom: 0 }}>

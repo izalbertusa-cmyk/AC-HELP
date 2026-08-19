@@ -1,4 +1,4 @@
-function digitosTelefone(fone: string): string {
+export function digitosTelefone(fone: string): string {
   return (fone || '').replace(/\D/g, '');
 }
 
