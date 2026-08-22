@@ -22,7 +22,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const chave = gerarChave(extensao);
   const corpo = await request.arrayBuffer();
 
-  if (corpo.byteLength === 0 || corpo.byteLength > 20 * 1024 * 1024) {
+  if (corpo.byteLength === 0 || corpo.byteLength > 5 * 1024 * 1024) {
     return new Response(JSON.stringify({ erro: 'arquivo vazio ou grande demais' }), {
       status: 400,
       headers: { 'content-type': 'application/json' },
