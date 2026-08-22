@@ -6,6 +6,7 @@ import { gerarPngDoDocumento, dataUrlParaBlob } from '../utils/documento';
 import { baixarArquivo, montarLinkWhatsapp } from '../utils/whatsapp';
 import { enviarParaR2 } from '../utils/upload';
 import { suportaCompartilharArquivos, compartilharArquivos } from '../utils/compartilhar';
+import { ehIOS } from '../utils/plataforma';
 
 interface PreviewScreenProps {
   oficina: OficinaDados;
@@ -115,9 +116,16 @@ export default function PreviewScreen({
     try {
       onSalvar();
       const principal = await gerarArquivoPrincipal();
-      // Prioriza anexar o PDF/imagem de verdade (fica com cara de documento real
-      // no WhatsApp, igual concorrência) — só cai pro link se o navegador não
-      // suportar compartilhar arquivo.
+      // No iOS o WhatsApp tem um bug conhecido (afeta até apps nativos) que trava o
+      // recebimento de arquivo vindo de compartilhamento externo — então pulamos
+      // direto pro link, que é o caminho confiável nesse aparelho.
+      if (ehIOS()) {
+        await enviarPorLink(principal);
+        return;
+      }
+      // Fora do iOS, prioriza anexar o PDF/imagem de verdade (fica com cara de
+      // documento real no WhatsApp, igual concorrência) — só cai pro link se o
+      // navegador não suportar compartilhar arquivo.
       const arquivoFile = new File([principal.blob], principal.nome, { type: principal.blob.type });
       if (!suportaCompartilharArquivos([arquivoFile])) {
         await enviarPorLink(principal);
