@@ -9,6 +9,7 @@ import OrcamentoScreen from './screens/OrcamentoScreen';
 import AjustesScreen from './screens/AjustesScreen';
 import HistoricoScreen from './screens/HistoricoScreen';
 import PreviewScreen from './screens/PreviewScreen';
+import AvisoInstalarIOS from './components/AvisoInstalarIOS';
 import type {
   AbaCatalogo,
   FonteVeiculo,
@@ -327,6 +328,7 @@ export default function App() {
         )}
       </div>
       <TabBar telaAtual={tela} onIr={irPara} />
+      <AvisoInstalarIOS />
     </div>
   );
 }
