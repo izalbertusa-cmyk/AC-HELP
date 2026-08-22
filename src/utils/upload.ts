@@ -1,7 +1,11 @@
 export async function enviarParaR2(blob: Blob): Promise<string> {
+  const token = import.meta.env.VITE_UPLOAD_TOKEN as string | undefined;
   const resposta = await fetch('/api/upload', {
     method: 'POST',
-    headers: { 'content-type': blob.type },
+    headers: {
+      'content-type': blob.type,
+      ...(token ? { 'x-app-token': token } : {}),
+    },
     body: blob,
   });
   if (!resposta.ok) {

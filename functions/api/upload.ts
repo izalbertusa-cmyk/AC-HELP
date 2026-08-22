@@ -1,5 +1,6 @@
 interface Env {
   BUCKET: R2Bucket;
+  UPLOAD_TOKEN: string;
 }
 
 function gerarChave(extensao: string): string {
@@ -9,6 +10,13 @@ function gerarChave(extensao: string): string {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
+
+  if (env.UPLOAD_TOKEN && request.headers.get('x-app-token') !== env.UPLOAD_TOKEN) {
+    return new Response(JSON.stringify({ erro: 'não autorizado' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
 
   const contentType = request.headers.get('content-type') || '';
   if (!contentType.startsWith('application/pdf') && !contentType.startsWith('image/')) {
